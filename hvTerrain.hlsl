@@ -21,9 +21,9 @@
         //     return (texA * b1 + texB * b2) / (b1 + b2);
     // }
 
-    half Sample_Terrain_HolesMap(float2 uv)
+    half Sample_Terrain_HolesMap(half2 uv)
     {
-        float hole = SAMPLE_TEXTURE2D(_HolesMap, sampler_HolesMap, uv).r;
+        half hole = SAMPLE_TEXTURE2D(_HolesMap, sampler_HolesMap, uv).r;
         return hole == 0.0f ? -1 : 1;
     }
 
@@ -140,6 +140,7 @@
         #if NORMALMAP
             // Get the sign (-1 or 1) of the surface normal
             half3 axisSign = sign(normalWS);
+            axisSign = axisSign == 0 ? 1 : axisSign;
 
             // Construct tangent to world matrices for each axis
             half3 tangentY = normalize(cross(normalWS, half3(0, 0, axisSign.y)));
@@ -195,7 +196,7 @@
                 albedoSmooth = Sample_Terrain_Texture2DArray_ID01_Bilinear(_AlbedoMaps, SamplerState_Linear_Repeat, blendMapUV, texUV, ddxy);
                 #if NORMALMAP
                     normalTS = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, texUV, ddxy).rg);
-                    normalWSblended = normalize(clamp(mul(normalTS, tbn), -1, 1));
+                    normalWSblended = normalize(mul(normalTS, tbn));
                 #endif
                 
                 #if TRIPLANAR
@@ -218,16 +219,15 @@
 
                         // normals
                         #if NORMALMAP
-                            half3 xNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, xUV, ddxy).rg);
-                            half3 yNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, yUV, ddxy).rg);
-                            half3 zNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, zUV, ddxy).rg);
+                            half3 xNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, xUV, ddxy).rg);
+                            half3 yNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, yUV, ddxy).rg);
+                            half3 zNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0_Bilinear(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, zUV, ddxy).rg);
 
                             // Apply tangent to world matrix and triblend
-                            // Using clamp() because the cross products may be NANs
                             normalWSblended = lerp(normalWSblended, normalize(
-                            clamp(mul(xNormalTSSample, tbnX), -1, 1) * blend.x +
-                            clamp(mul(yNormalTSSample, tbnY), -1, 1) * blend.y +
-                            clamp(mul(zNormalTSSample, tbnZ), -1, 1) * blend.z),
+                            mul(xNormalTSSample, tbnX) * blend.x +
+                            mul(yNormalTSSample, tbnY) * blend.y +
+                            mul(zNormalTSSample, tbnZ) * blend.z),
                             axisBlend);
                         #endif
                     }
@@ -239,7 +239,7 @@
             albedoSmooth = Sample_Terrain_Texture2DArray_ID01(_AlbedoMaps, SamplerState_Linear_Repeat, blendMapUV, texUV, ddxy);
             #if NORMALMAP
                 normalTS = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, texUV, ddxy).rg);
-                normalWSblended = normalize(clamp(mul(normalTS, tbn), -1, 1));
+                normalWSblended = normalize(mul(normalTS, tbn));
             #endif
             
             #if TRIPLANAR
@@ -262,16 +262,15 @@
 
                     // normals
                     #if NORMALMAP
-                        half3 xNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, xUV, ddxy).rg);
-                        half3 yNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, yUV, ddxy).rg);
-                        half3 zNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID01(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, zUV, ddxy).rg);
+                        half3 xNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, xUV, ddxy).rg);
+                        half3 yNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, yUV, ddxy).rg);
+                        half3 zNormalTSSample = UnpackNormal_TS(Sample_Terrain_Texture2DArray_ID0(_NormalMaps, SamplerState_Linear_Repeat, blendMapUV, zUV, ddxy).rg);
 
                         // Apply tangent to world matrix and triblend
-                        // Using clamp() because the cross products may be NANs
                         normalWSblended = lerp(normalWSblended, normalize(
-                        clamp(mul(xNormalTSSample, tbnX), -1, 1) * blend.x +
-                        clamp(mul(yNormalTSSample, tbnY), -1, 1) * blend.y +
-                        clamp(mul(zNormalTSSample, tbnZ), -1, 1) * blend.z),
+                        mul(xNormalTSSample, tbnX) * blend.x +
+                        mul(yNormalTSSample, tbnY) * blend.y +
+                        mul(zNormalTSSample, tbnZ) * blend.z),
                         axisBlend);
                     #endif
                 }
@@ -280,7 +279,7 @@
             }
         #endif
 
-        outColor = albedoSmooth.rgb;
+        outColor = albedoSmooth;
         outNormal = normalWSblended;
         outSmoothness = albedoSmooth.a;
         outAlpha = holes;

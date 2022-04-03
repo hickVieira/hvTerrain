@@ -387,7 +387,7 @@ public class hvTerrainBaker : MonoBehaviour
             alphaMapsPixels.Dispose();
             smsJob.inoutBlendMap1.Dispose();
             smsJob.inoutBlendMap0.Dispose();
-            // RenderTexture.ReleaseTemporary(tempBlend1RT);
+            RenderTexture.ReleaseTemporary(tempBlend1RT);
         }
 
         // create textureArrays
